@@ -39,7 +39,7 @@ QS_train1 = quadrant_separation(Cubical_train1)
 
 Sum = Concatenation(SB_train0, SB_train1) # using concatenation function to form the feature vectors. We illustrate the case when using sum of barcodes only, but one can iterately using this function to form any combination of vectorizations.
 
-# Normalizations for the training set
+# Normalizations for the training set, note that we need to normalize the feature vectors by each coordinate before fitting into the machine learning models.
 Sum = Concatenation(SumOriginal,SumSigned)
 Means = GetMean(Sum)
 Sd = GetSd(Sum)
