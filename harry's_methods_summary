@@ -1,0 +1,155 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import statsmodels.api as sm
+import statsmodels.graphics.api as smg
+import pickle
+from sklearn.linear_model import LinearRegression as LR
+
+prtest = np.array(pickle.load(open('porous_rock_images_test.pkl', 'rb')))
+#testing set - images stored as 50 x 50 arrays
+
+ftest = np.array(pickle.load(open('flux_test.pkl', 'rb')))
+#testing set - fluxes
+
+prt = np.array(pickle.load(open('porous_rock_images_train.pkl', 'rb')))
+#training set - fluxes
+
+ft = np.array(pickle.load(open('flux_train.pkl', 'rb')))
+#training set - images stored as 50 x 50 arrays
+
+ntest, ytest, xtest = prtest.shape
+nt, yt, xt =ntest, ytest, xtest
+n, y, x = prt.shape
+
+
+
+
+# LOWRES Method
+    # creating a LOWRES 5 x 5image
+LOWRES = list()
+
+for m in range(n):
+    prt25dummy = list()
+    for a in range(5):
+        for b in range(5):
+            prtsquare = prt[m,10*a:10*a+10, 10*b:10*b+10]
+            prt25dummy.append(prtsquare.mean())
+    LOWRES.append(prt25dummy)
+
+LOWRES = np.array(LOWRES)
+
+
+# MSRPROP Method
+# probability distribution method
+MEAN = np.sum(np.sum(prt, axis=-1), axis=-1)
+k = np.round(MEAN)
+
+# y co-ordinates for our points
+ypts = list()
+# x co-ordinates for our points
+xpts= list()
+# combined x and y points
+xypts = list()
+
+for m in range(n):
+    p0 = prt[m]/MEAN[m]     #probability matrix
+    p_flat = p0.flatten()
+    pts = np.random.default_rng().choice(x*y,k[m],p=p_flat)
+    pts_y = pts//y
+    pts_x = pts%x
+    pts_xy = np.transpose([pts_x,pts_y])
+    ypts.append(pts_y)
+    xpts.append(pts_x)
+    xypts.append(pts_xy)
+# Calculating Vietoris-Rips Filtration, the Persistent Homology and Barcode for MSRPROP
+from gtda.homology import VietorisRipsPersistence
+VR = VietorisRipsPersistence(n_jobs=-1)
+MSRPROP_Pers = VR.fit_transform(xypts)
+\end{verbatim}
+
+
+
+# FLIP Method
+#point cloud generation - coin flip method
+
+ran = np.random.default_rng().uniform(size = (n,y,x))
+flips = prt < ran
+xpts = list()
+ypts = list()
+xypts = list()
+for m in range(n):
+    pts = np.argwhere(flips[m] == False)
+    xypts.append(pts)
+    pts_y = pts[:,0]
+    pts_x = pts[:,1]
+    ypts.append(pts_y)
+    xpts.append(pts_x) 
+#Calculating Vietoris-Rips Filtration, the Persistent Homology and Barcode
+from gtda.homology import VietorisRipsPersistence
+VR = VietorisRipsPersistence(n_jobs=-1)
+MSRFLIP_Pers = VR.fit_transform(xypts)
+
+
+
+#CUBE Method
+from gtda.homology import CubicalPersistence
+CR = CubicalPersistence(n_jobs=-1)
+CUBE_Pers = CR.fit_transform(prt)
+CR.plot(PtCloudPers1,0)
+
+
+
+#Calculating the \(l^2\) sum from the barcode}
+#(Here on \(H_1\))
+    sum_1_L2 = np.zeros(i)
+for x in range(i): 
+    C = Pers[x,:,:]
+    CH = C[np.where( C[:,2]== 1,)] 
+    vectC = CH[:,1] - CH[:,0]
+    vectCL2 = np.square(vectC)
+    sumCL2squared = np.sum(vectC)
+    sumCL2 = np.sqrt(sumCL2squared)
+    sum_1_L2[x] = sumCL2
+
+#Calculating the BES
+
+bespokev = np.zeros(i)
+for j in range(i): 
+    C = CUBE_Pers[j,:,:]
+    CH = C[np.where( C[:,2]== 0,)] 
+    CHH = CH[np.where(CH[:,0] == 0)]    
+    bespokev[j] = CHH.sum() 
+    #the CHH.sum() is a quick way of dealing with extra padding 0's 
+    # which are found in CUBE_Pers
+
+#MSE and R^2
+
+# mean square error - normalise data, then mean square error 
+# s = simulated, o = observed
+def nmse(s, o):
+    s = np.array(s)
+    o = np.array(o)
+    mean = o.mean()
+    std = o.std()
+    onorm = (o - mean)/std
+    snorm = (s - mean)/std
+    return np.dot(onorm-snorm,onorm-snorm)
+
+# r - squared
+def rsq(s, o):
+    s = np.array(s)
+    o = np.array(o)
+    mean = o.mean()
+    ssres = np.dot(s - o, s - o)
+    sstot = np.dot(o-mean,o-mean)
+    return 1 - ssres/sstot
+
+#Example of Linear Regression and MSE and \(R^2\) calculation
+#(Here on 3+4+5+7)
+
+vect = np.array([MSR500H0, MSR1000H0, MSR1500H0, MEAN]).T
+vectest = np.array([MSR500H0TEST, MSR1000H0TEST, MSR1500H0TEST, MEANTEST]).T
+stest = LR().fit(vect,np.array(ft)).predict(vectest)
+print('results on the training set linear regression, 3+4+5+7')
+print('nmse = ', nmse(stest, ftest))
+print('rsq = ', rsq(stest,ftest))
