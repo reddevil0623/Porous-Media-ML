@@ -18,13 +18,16 @@ X_signed = signed_distance_function(X_train, 1, False)
 cubical_signed0 = cubical_persistence0.fit_transform(X_signed)
 cubical_signed1 = cubical_persistence1.fit_transform(X_signed)
 
+X_transformed = AddColumn(X_signed,-10000)
+cubical_transformed0 = cubical_persistence0.fit_transform(X_transformed)
+
 Cubical_test0 = cubical_persistence0.fit_transform(X_test)
 Cubical_test1 = cubical_persistence1.fit_transform(X_test)
 
 X_test1 = signed_distance_function(X_test, 1, False)
 Cubical_test2 = cubical_persistence0.fit_transform(X_test1)
 Cubical_test3 = cubical_persistence1.fit_transform(X_test1)
-
+Cubical_test4 = cubical_persistence0.fit_transform(AddColumn(X_test1,-10000))
 
 # calculating feature vectors for the training set
 SB_train0 = PersistenceSum(Cubical_train0) # one can also apply these functions to the Cubical_signed0 and Cubical_signed1 to get persistent barcodes of the signed distance function filtration.
@@ -36,6 +39,7 @@ PL_train1 = Landscape(Cubical_train1)
 SS_train = SaddleSum(Cubical_train0,Cubical_train1)
 QS_train0 = quadrant_separation(Cubical_train0)
 QS_train1 = quadrant_separation(Cubical_train1)
+ConVal = Connection(cubical_transformed0)
 
 Sum = Concatenation(SB_train0, SB_train1) # using concatenation function to form the feature vectors. We illustrate the case when using sum of barcodes only, but one can iterately using this function to form any combination of vectorizations.
 
@@ -58,6 +62,7 @@ PL_test1 = Landscape(Cubical_test1)
 SS_test = SaddleSum(Cubical_test0,Cubical_test1)
 QS_test0 = quadrant_separation(Cubical_test0)
 QS_test1 = quadrant_separation(Cubical_test1)
+ConVal1 = Connection(Cubical_test4)
 
 S = Concatenation(SB_test0,SB_test1)
 X_test_tda = ColumnNormalize(S, Means, Sd) # we need to use the mean and standard deviation of the training set to normalize the testing set as well.
