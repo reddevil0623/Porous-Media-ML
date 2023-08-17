@@ -1,3 +1,47 @@
+def AddColumn(M, a):
+    # Check if input is a 3D numpy array
+    if len(M.shape) != 3:
+        raise ValueError("Input matrix M is not 3D")
+
+    # Get the dimensions of the 2D matrices in M
+    _, rows, _ = M.shape
+
+    # Create a 2D array of shape (rows, 1) with all elements equal to a
+    column = np.full((rows, 1), a)
+
+    # Add column to both ends of each 2D matrix in M
+    M_new = np.array([np.hstack((column, m, column)) for m in M])
+
+    return M_new
+
+def Connection(M):
+    # Check the shape of M
+    if len(M.shape) != 3 or M.shape[2] != 3:
+        raise ValueError("Input array M must have shape (x, y, 3)")
+
+    # Initialize a list to store the results for each persistence diagram
+    results = []
+
+    # Iterate through the persistence diagrams
+    for diagram in M:
+        # Extract birth and death values
+        birth_values = diagram[:, 0]
+        death_values = diagram[:, 1]
+
+        # Find indices of barcodes with birth value -10000
+        indices = np.where(birth_values == -10000)[0]
+
+        # Extract the death values of the barcodes with birth value -10000
+        death_values_of_interest = death_values[indices]
+
+        # Find the minimum death value that is not -10000
+        result = np.min(death_values_of_interest[death_values_of_interest != -10000])
+
+        # Append the result to the list of results
+        results.append(result)
+
+    return results
+
 def PersistenceSum(Bcodes):
     """
     :param Bcodes: persistent barcodes of input images
